@@ -4,7 +4,7 @@ const processPeriodic = require('./processPeriodic');
 const processEvent = async (event) => {
     // console.log('processEvent', new Date());
     // console.log('EVENT', event);
-    if(!event.header.type) {
+    if(!event.header || !event.header.type) {
         throw new Error('Invalid request');
     }
     if(event.header.type === 'DISCOVERY') {
