@@ -1,5 +1,7 @@
 const { v4: uuidv4 } = require('uuid');
 
+const processEvent = require('../src/processEvent');
+
 const restify = require('restify');
 const server = restify.createServer();
 server.use(restify.plugins.queryParser({ mapParams: true }));
@@ -22,16 +24,26 @@ server.get('/', function(req, res, next) {
     return next();
 });
 
-server.post('/', function(req, res, next) {
-    const event = {
-        received: new Date().toISOString(),
-        data: JSON.stringify(req.body)
-    };
-    console.log('EVENT', event);
-    res.send({
-        eventId: uuidv4(),
-        timestamp: new Date().toISOString()
-    });
+server.post('/', async function(req, res, next) {
+    const event = req.body;
+    if(event === undefined) {
+        throw new Error('Invalid request');
+    }
+    try {
+        const result = await processEvent(event);
+        console.log('EVENT', result);
+        res.send({
+            eventId: result.header.eventId,
+            timestamp: new Date().toISOString()
+        });
+    } catch(error) {
+        console.log('ERROR', error);
+        if(error.message === 'Invalid request' || error.message === 'Unknown event') {
+            res.send(400, 'Bad request');
+        } else {
+            res.send(500, 'Internal Server Error');
+        }
+    }
     return next();
 });
 
